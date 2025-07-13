@@ -1,5 +1,5 @@
-# Lightweight image with Python and gh CLI
-FROM python:3.11-slim
+# Image with Python 3.11 and uv (fast package manager) pre-installed
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
 
 # Install gh CLI
 RUN apt-get update -y && \
@@ -14,7 +14,7 @@ WORKDIR /app
 
 COPY . /app
 
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir .
+# Install project dependencies using uv (reads pyproject.toml)
+RUN uv pip install --system .
 
 ENTRYPOINT ["python", "main.py"]
