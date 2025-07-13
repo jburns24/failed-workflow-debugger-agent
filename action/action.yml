@@ -64,8 +64,6 @@ runs:
 
   - name: Post diagnosis comment
     shell: bash
-    env:
-      GH_TOKEN: ${{ inputs.github_token }}
     run: |
       function post_comment() {
         local endpoint="$1"
