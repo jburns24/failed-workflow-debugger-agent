@@ -19,7 +19,7 @@ runs:
       set -e
       gh auth login --with-token <<< "${{ inputs.github_token }}"
       gh api /repos/${{ GITHUB_REPOSITORY }}/actions/runs/${{ GITHUB_RUN_ID }}/logs --output /tmp/logs.tar.gz
-      python -m failed_workflow_debugger_agent.main /tmp/logs.tar.gz > report.md
+      python /app/main.py /tmp/logs.tar.gz > report.md
       # Post comment to PR if exists, else to commit
       if [ -n "${{ github.event.workflow_run.pull_requests[0].number }}" ]; then
         pr=${{ github.event.workflow_run.pull_requests[0].number }}
