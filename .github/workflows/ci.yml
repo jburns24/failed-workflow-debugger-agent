@@ -1,4 +1,4 @@
-name: CI
+name: Test and Diagnose
 
 on:
   push:
@@ -22,3 +22,12 @@ jobs:
         run: |
           echo "Running fake tests"
           exit 1 # Force failure to test debugger
+
+      - name: Run failure diagnosis
+        uses: ./action
+        if: failure()
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          llm_model: "openai/gpt-4o"
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

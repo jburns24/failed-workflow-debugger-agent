@@ -1,0 +1,9 @@
+# Chainguard trust policy for container provenance verification
+# Adapted from liatrio/sentiment-tracker example
+version: 1
+images:
+  - name: ghcr.io/${{ REPO_OWNER }}/fw-debugger
+    statements:
+      - type: cosign
+        predicateType: https://slsa.dev/provenance/v0.2
+        source: github.com/${{ REPO }}

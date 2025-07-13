@@ -11,33 +11,70 @@ inputs:
   llm_model:
     description: "Model ID understood by LiteLLM (e.g., openai/gpt-4o, anthropic/claude-3-sonnet)"
     default: "openai/gpt-4o"
+  image:
+    description: "Debugger container image"
+    default: "ghcr.io/${{ github.repository_owner }}/fw-debugger:latest"
+  run_id:
+    description: "Workflow run ID to diagnose (default: triggering run)"
+    required: false
+
+branding:
+  icon: "activity"
+  color: "purple"
 
 runs:
-  using: "docker"
-  image: "Dockerfile"
-  env:
-    LLM_MODEL: ${{ inputs.llm_model }}
-  entrypoint: "/bin/sh"
-  args:
-    - -c
-    - |
-      set -e
-      gh auth login --with-token <<< "${{ inputs.github_token }}"
-      gh api /repos/${{ github.repository }}/actions/runs/${{ GITHUB_RUN_ID }}/logs --output /tmp/logs.tar.gz
-      python /app/main.py /tmp/logs.tar.gz > report.md
-      # Post comment to PR if exists, else to commit
+  using: "composite"
+  
+
+  
+  steps:
+  - name: Authenticate gh CLI
+    shell: bash
+    env:
+      GH_TOKEN: ${{ inputs.github_token }}
+    run: |
+      echo "::add-mask::$GH_TOKEN"
+      gh auth login --with-token <<< "$GH_TOKEN"
+
+  - name: Download workflow logs
+    id: download_logs
+    env:
+      INPUT_RUN_ID: ${{ inputs.run_id }}
+      FALLBACK_ID: ${{ github.event.workflow_run.id }}
+    run: |
+      RID=${INPUT_RUN_ID:-$FALLBACK_ID}
+      echo "Downloading logs for run $RID"
+      gh api "/repos/${{ github.repository }}/actions/runs/$RID/logs" --output /tmp/logs.zip
+      echo "::set-output name=log_path::/tmp/logs.zip"
+
+  - name: Run LLM debugger container
+    shell: bash
+    env:
+      IMAGE: ${{ inputs.image }}
+      OPENAI_API_KEY: ${{ env.OPENAI_API_KEY }}
+      LLM_MODEL: ${{ inputs.llm_model }}
+      LOG_PATH: ${{ steps.download_logs.outputs.log_path }}
+    run: |
+      docker run --rm \
+        -e OPENAI_API_KEY \
+        -e LLM_MODEL \
+        -v "$LOG_PATH:/tmp/logs.zip" \
+        "$IMAGE" /app/main.py /tmp/logs.zip > report.md
+
+  - name: Post diagnosis comment
+    shell: bash
+    env:
+      GH_TOKEN: ${{ inputs.github_token }}
+    run: |
+      function post_comment() {
+        local endpoint="$1"
+        gh api -X POST -H "Content-Type: application/json" "$endpoint" -f body="$(cat report.md)"
+      }
+
       if [ -n "${{ github.event.workflow_run.pull_requests[0].number }}" ]; then
         pr=${{ github.event.workflow_run.pull_requests[0].number }}
-        gh api \
-          -X POST \
-          -H "Content-Type: application/json" \
-          "/repos/${{ github.repository }}/issues/${pr}/comments" \
-          -f body="$(cat report.md)"
+        post_comment "/repos/${{ github.repository }}/issues/${pr}/comments"
       else
         sha=${{ github.event.workflow_run.head_sha }}
-        gh api \
-          -X POST \
-          -H "Content-Type: application/json" \
-          "/repos/${{ github.repository }}/commits/${sha}/comments" \
-          -f body="$(cat report.md)"
+        post_comment "/repos/${{ github.repository }}/commits/${sha}/comments"
       fi
