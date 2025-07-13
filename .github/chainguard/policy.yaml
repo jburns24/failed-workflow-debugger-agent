@@ -1,9 +1,7 @@
-# Chainguard trust policy for container provenance verification
-# Adapted from liatrio/sentiment-tracker example
-version: 1
-images:
-  - name: ghcr.io/${{ REPO_OWNER }}/fw-debugger
-    statements:
-      - type: cosign
-        predicateType: https://slsa.dev/provenance/v0.2
-        source: github.com/${{ REPO }}
+issuer: https://token.actions.githubusercontent.com
+subject_pattern: repo:jburns24/failed-workflow-debugger-agent:ref:refs/heads/main
+claim_pattern:
+  workflow_ref: jburns24/failed-workflow-debugger-agent/.github/workflows/semantic-release.yaml@.* # Still not sure what needs to come after the actual workflow name but this works
+
+permissions:
+  contents: write
