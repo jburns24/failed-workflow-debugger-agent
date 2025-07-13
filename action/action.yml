@@ -34,9 +34,10 @@ runs:
       GH_TOKEN: ${{ inputs.github_token }}
       INPUT_RUN_ID: ${{ inputs.run_id }}
       FALLBACK_ID: ${{ github.event.workflow_run.id }}
+      GITHUB_RUN_ID: ${{ github.run_id }}
     id: download_logs
     run: |
-      RID=${INPUT_RUN_ID:-$FALLBACK_ID}
+      RID=${INPUT_RUN_ID:-${FALLBACK_ID:-$GITHUB_RUN_ID}}
       echo "Fetching run metadata to locate logs URL"
       LOGS_URL=$(gh api "/repos/${{ github.repository }}/actions/runs/$RID" -q .logs_url)
       echo "Downloading logs from $LOGS_URL"
