@@ -13,7 +13,7 @@ inputs:
     default: "openai/gpt-4o"
   image:
     description: "Debugger container image"
-    default: "ghcr.io/${{ github.repository_owner }}/fw-debugger:latest"
+    default: "ghcr.io/jburns24/failed-workflow-debugger-agent:latest"
   run_id:
     description: "Workflow run ID to diagnose (default: triggering run)"
     required: false
