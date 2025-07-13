@@ -38,6 +38,7 @@ runs:
 
   - name: Download workflow logs
     id: download_logs
+    shell: bash
     env:
       INPUT_RUN_ID: ${{ inputs.run_id }}
       FALLBACK_ID: ${{ github.event.workflow_run.id }}

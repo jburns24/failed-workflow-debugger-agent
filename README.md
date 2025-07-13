@@ -25,37 +25,70 @@ python main.py /path/to/logs.tar.gz
 ./scripts/local_diagnose.sh owner/repo 123456789
 ```
 
-## Publishing / Using the Action
+## Using the Composite GitHub Action
 
-1. Build & push Docker image:
+The Action lives at `action/action.yml` and is published via release tags (e.g. `v1.2.0`).
 
-```bash
-docker build -t ghcr.io/<org>/failed-workflow-debugger:latest .
-docker push ghcr.io/<org>/failed-workflow-debugger:latest
-```
-
-2. Tag a release so users can reference `@v1`.
-
-3. In any repo:
+Add it to any repository to annotate failed workflow runs:
 
 ```yaml
+# .github/workflows/diagnose.yml
+name: Diagnose Failures
+
+on:
+  workflow_run:
+    workflows: ["CI"]     # or whichever workflow(s) you want to watch
+    types:
+      - completed
+
 jobs:
   diagnose:
-    if: ${{ failure() }}
-    uses: <org>/failed-workflow-debugger-agent@v1
-    with:
-      github_token: ${{ secrets.GITHUB_TOKEN }}
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: jburns24/failed-workflow-debugger-agent/action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }} # Required for API calls
+          llm_model: "openai/gpt-4o"               # Optional – defaults to same value
+          # run_id defaults to the triggering workflow run id
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 ```
 
-## Model & API key configuration
+The step will:
+1. Download the logs for the failed run.
+2. Run the agent container to analyse them.
+3. Post a rich Markdown report on the PR (or commit).
 
-This project uses [LiteLLM](https://github.com/BerriAI/litellm) so you can switch between many providers/models without changing code. See the [supported models list](https://docs.litellm.ai/docs/providers) for valid IDs.
+---
+
+## CI/CD Pipeline (this repo)
+
+The repository ships with an opinionated release flow:
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| **`ci.yml`** | Every push / PR | Runs intentional-fail tests and executes the debugger Action to dog-food it |
+| **`pr-lint.yaml`** | PR events | Enforces Conventional Commit-style PR titles |
+| **`semantic-release.yaml`** | Push to `main` | Uses **octo-sts** to acquire a scoped token and creates a new semver tag (`vX.Y.Z`) |
+| **`build-push.yaml`** | Push of `v*.*.*` tag | Builds the multi-arch container and pushes `ghcr.io/<owner>/fw-debugger:{sha,latest,version}` |
+
+### Supply-chain verification
+
+* `.github/chainguard/policy.yaml` defines a Chainguard **trust policy** that downstream users can apply to verify provenance.
+* `octo-sts` GitHub App must be installed on the repo so `semantic-release.yaml` can request an **OIDC-signed** token to push tags that conform to the policy.
+
+---
+
+## Model & API-key configuration
+
+This project uses [LiteLLM](https://github.com/BerriAI/litellm), so you can point the Action at any supported LLM.
 
 | Env var | Purpose | Default |
 |---------|---------|---------|
-| `OPENAI_API_KEY` (or provider-specific key) | Authenticates the model backend | — (required) |
+| `OPENAI_API_KEY` (or provider-specific key) | Authenticates the model backend | — (_required_) |
 | `LLM_MODEL` | Model ID, e.g. `openai/gpt-4o`, `anthropic/claude-3-sonnet` | `openai/gpt-4o` |
 
-* **GitHub Action** – accepts an optional `llm_model` input (passed to `LLM_MODEL`) and forwards your secret `OPENAI_API_KEY` into the container.
+* **GitHub Action** – accepts an optional `llm_model` input and forwards your secret `OPENAI_API_KEY` into the container.
 * **Local script** – place these vars in a `.env` file; `scripts/local_diagnose.sh` loads it automatically.
 
