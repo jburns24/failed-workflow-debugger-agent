@@ -15,5 +15,6 @@ jobs:
         uses: ./action
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          llm_model: "openai/gpt-4.1"
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

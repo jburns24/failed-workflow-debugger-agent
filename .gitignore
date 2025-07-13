@@ -1,0 +1,42 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+.venv/
+
+# Environment & secrets
+.env
+*.env*
+
+# Logs and coverage
+logs/
+*.log
+logs_*.tar.gz
+coverage/
+htmlcov/
+
+# Packaging / distribution
+build/
+dist/
+*.egg-info/
+
+# IDE & editor files
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+__MACOSX/
+.Spotlight-V100
+.Trashes
+
+# Docker
+*.tar
+

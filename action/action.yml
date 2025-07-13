@@ -8,10 +8,15 @@ inputs:
   github_token:
     description: "GitHub token with repo scope"
     required: true
+  llm_model:
+    description: "Model ID understood by LiteLLM (e.g., openai/gpt-4o, anthropic/claude-3-sonnet)"
+    default: "openai/gpt-4o"
 
 runs:
   using: "docker"
   image: "Dockerfile"
+  env:
+    LLM_MODEL: ${{ inputs.llm_model }}
   entrypoint: "/bin/sh"
   args:
     - -c

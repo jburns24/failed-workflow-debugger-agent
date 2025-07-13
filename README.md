@@ -17,8 +17,12 @@ and suggested fixes.
 ## Quick test locally
 
 ```bash
-pip install -r requirements.txt
-python main.py tests/example-logs.tar.gz
+# one-off run
+uv pip install .
+python main.py /path/to/logs.tar.gz
+
+# or via the helper script (requires gh CLI & .env file):
+./scripts/local_diagnose.sh owner/repo 123456789
 ```
 
 ## Publishing / Using the Action
@@ -42,3 +46,16 @@ jobs:
     with:
       github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+## Model & API key configuration
+
+This project uses [LiteLLM](https://github.com/BerriAI/litellm) so you can switch between many providers/models without changing code. See the [supported models list](https://docs.litellm.ai/docs/providers) for valid IDs.
+
+| Env var | Purpose | Default |
+|---------|---------|---------|
+| `OPENAI_API_KEY` (or provider-specific key) | Authenticates the model backend | — (required) |
+| `LLM_MODEL` | Model ID, e.g. `openai/gpt-4o`, `anthropic/claude-3-sonnet` | `openai/gpt-4o` |
+
+* **GitHub Action** – accepts an optional `llm_model` input (passed to `LLM_MODEL`) and forwards your secret `OPENAI_API_KEY` into the container.
+* **Local script** – place these vars in a `.env` file; `scripts/local_diagnose.sh` loads it automatically.
+

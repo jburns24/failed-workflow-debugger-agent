@@ -12,8 +12,10 @@ from google.adk.agents import Agent
 from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools.tool_context import ToolContext
 
-# Choose a capable but affordable model via LiteLLM. Update to match your key/provider.
-MODEL_GPT_4O = "openai/gpt-4o"
+import os
+
+# Model ID can be overridden via env var `LLM_MODEL` (e.g., "anthropic/claude-3-sonnet").
+MODEL_ID = os.getenv("LLM_MODEL", "openai/gpt-4o")
 
 COMMON_ERROR_PATTERNS: list[tuple[str, str]] = [
     (r"ModuleNotFoundError: No module named '([^']+)'", "Missing Python dependency: {0}"),
@@ -53,7 +55,7 @@ def parse_logs(log_lines: List[str], tool_context: ToolContext | None = None) ->
 
 workflow_debugger_agent = Agent(
     name="workflow_debugger",
-    model=LiteLlm(model=MODEL_GPT_4O),
+    model=LiteLlm(model=MODEL_ID),
     instruction=(
         "You diagnose failed GitHub Actions workflow runs. "
         "First, call the tool `parse_logs` to analyse the raw logs passed in the conversation. "
