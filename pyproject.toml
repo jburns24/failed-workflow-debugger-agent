@@ -1,0 +1,14 @@
+[project]
+name = "failed-workflow-debugger-agent"
+version = "0.1.0"
+description = "ADK agent that analyzes failed GitHub Actions workflow logs and suggests fixes."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "google-adk>=1.6.1",
+    "litellm>=1.74.2"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

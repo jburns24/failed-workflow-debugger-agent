@@ -1,0 +1,13 @@
+name: Diagnose failed workflows
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+jobs:
+  diagnose:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    uses: ./.github/actions/diagnose
+    with:
+      github_token: ${{ secrets.GITHUB_TOKEN }}
