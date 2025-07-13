@@ -28,20 +28,13 @@ runs:
 
   
   steps:
-  - name: Authenticate gh CLI
+  - name: Download workflow logs
     shell: bash
     env:
       GH_TOKEN: ${{ inputs.github_token }}
-    run: |
-      echo "::add-mask::$GH_TOKEN"
-      gh auth login --with-token <<< "$GH_TOKEN"
-
-  - name: Download workflow logs
-    id: download_logs
-    shell: bash
-    env:
       INPUT_RUN_ID: ${{ inputs.run_id }}
       FALLBACK_ID: ${{ github.event.workflow_run.id }}
+    id: download_logs
     run: |
       RID=${INPUT_RUN_ID:-$FALLBACK_ID}
       echo "Downloading logs for run $RID"
@@ -64,6 +57,8 @@ runs:
 
   - name: Post diagnosis comment
     shell: bash
+    env:
+      GH_TOKEN: ${{ inputs.github_token }}
     run: |
       function post_comment() {
         local endpoint="$1"
