@@ -43,11 +43,11 @@ runs:
 
       RID=${INPUT_RUN_ID:-${FALLBACK_ID:-$GITHUB_RUN_ID}}
       echo "📥 Fetching logs for run $RID ..."
-      if ! gh api "/repos/${{ github.repository }}/actions/runs/$RID/logs" > /tmp/logs.tar.gz; then
+      if ! gh api "/repos/${{ github.repository }}/actions/runs/$RID/logs" > /tmp/logs.zip; then
         echo "❌ Error: Failed to download workflow run logs for run $RID." >&2
         exit 1
       fi
-      echo "log_path=/tmp/logs.tar.gz" >> "$GITHUB_OUTPUT"
+      echo "log_path=/tmp/logs.zip" >> "$GITHUB_OUTPUT"
 
   - name: Run LLM debugger container
     shell: bash
@@ -60,8 +60,8 @@ runs:
       docker run --rm \
         -e OPENAI_API_KEY \
         -e LLM_MODEL \
-        -v "$LOG_PATH:/tmp/logs.tar.gz" \
-        "$IMAGE" /app/main.py /tmp/logs.tar.gz > report.md
+        -v "$LOG_PATH:/tmp/logs.zip" \
+        "$IMAGE" /app/main.py /tmp/logs.zip > report.md
 
   - name: Add diagnosis to workflow summary
     shell: bash
