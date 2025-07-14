@@ -2,8 +2,9 @@ name: Diagnose failed workflows
 
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: [Test]   # name of ci.yml
     types: [completed]
+    branches: [main, '**']
 
 jobs:
   diagnose:
