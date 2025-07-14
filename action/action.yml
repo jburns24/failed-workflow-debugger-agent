@@ -42,10 +42,11 @@ runs:
       gh auth status || echo "$GH_TOKEN" | gh auth login --with-token
 
       RID=${INPUT_RUN_ID:-${FALLBACK_ID:-$GITHUB_RUN_ID}}
-      echo "Fetching run metadata to locate logs URL"
-      LOGS_URL=$(gh api "/repos/${{ github.repository }}/actions/runs/$RID" -q .logs_url)
-      echo "Downloading logs from $LOGS_URL"
-      curl -fL -H "Accept: application/zip" "$LOGS_URL" -o /tmp/logs.zip
+      echo "📥 Fetching logs for run $RID ..."
+      if ! gh api "/repos/${{ github.repository }}/actions/runs/$RID/logs" > /tmp/logs.zip; then
+        echo "❌ Error: Failed to download workflow run logs for run $RID." >&2
+        exit 1
+      fi
       echo "log_path=/tmp/logs.zip" >> "$GITHUB_OUTPUT"
 
   - name: Run LLM debugger container
