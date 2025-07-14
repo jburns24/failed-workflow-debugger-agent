@@ -43,11 +43,11 @@ runs:
 
       RID=${INPUT_RUN_ID:-${FALLBACK_ID:-$GITHUB_RUN_ID}}
       echo "📥 Fetching logs for run $RID ..."
-      if ! gh api "/repos/${{ github.repository }}/actions/runs/$RID/logs" > /tmp/logs.zip; then
+      if ! gh api "/repos/${{ github.repository }}/actions/runs/$RID/logs" > /tmp/logs.tar.gz; then
         echo "❌ Error: Failed to download workflow run logs for run $RID." >&2
         exit 1
       fi
-      echo "log_path=/tmp/logs.zip" >> "$GITHUB_OUTPUT"
+      echo "log_path=/tmp/logs.tar.gz" >> "$GITHUB_OUTPUT"
 
   - name: Run LLM debugger container
     shell: bash
@@ -60,23 +60,11 @@ runs:
       docker run --rm \
         -e OPENAI_API_KEY \
         -e LLM_MODEL \
-        -v "$LOG_PATH:/tmp/logs.zip" \
-        "$IMAGE" /app/main.py /tmp/logs.zip > report.md
+        -v "$LOG_PATH:/tmp/logs.tar.gz" \
+        "$IMAGE" /app/main.py /tmp/logs.tar.gz > report.md
 
-  - name: Post diagnosis comment
+  - name: Add diagnosis to workflow summary
     shell: bash
-    env:
-      GH_TOKEN: ${{ inputs.github_token }}
     run: |
-      function post_comment() {
-        local endpoint="$1"
-        gh api -X POST -H "Content-Type: application/json" "$endpoint" -f body="$(cat report.md)"
-      }
-
-      if [ -n "${{ github.event.workflow_run.pull_requests[0].number }}" ]; then
-        pr=${{ github.event.workflow_run.pull_requests[0].number }}
-        post_comment "/repos/${{ github.repository }}/issues/${pr}/comments"
-      else
-        sha=${{ github.event.workflow_run.head_sha }}
-        post_comment "/repos/${{ github.repository }}/commits/${sha}/comments"
-      fi
+      echo "### Workflow Diagnosis Report" >> "$GITHUB_STEP_SUMMARY"
+      cat report.md >> "$GITHUB_STEP_SUMMARY"
