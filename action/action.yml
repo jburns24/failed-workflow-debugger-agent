@@ -2,7 +2,7 @@ name: diagnose-failed-workflow
 
 description: "Run ADK agent to analyze failed GitHub Action runs"
 
-author: Windsurf Cascade
+author: Joshua Burns
 
 inputs:
   github_token:
@@ -37,6 +37,10 @@ runs:
       GITHUB_RUN_ID: ${{ github.run_id }}
     id: download_logs
     run: |
+      echo "::add-mask::$GH_TOKEN"
+      # Ensure gh is authenticated (store token in keychain for this run)
+      gh auth status || echo "$GH_TOKEN" | gh auth login --with-token
+
       RID=${INPUT_RUN_ID:-${FALLBACK_ID:-$GITHUB_RUN_ID}}
       echo "Fetching run metadata to locate logs URL"
       LOGS_URL=$(gh api "/repos/${{ github.repository }}/actions/runs/$RID" -q .logs_url)
