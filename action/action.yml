@@ -46,7 +46,7 @@ runs:
       LOGS_URL=$(gh api "/repos/${{ github.repository }}/actions/runs/$RID" -q .logs_url)
       echo "Downloading logs from $LOGS_URL"
       curl -fL -H "Accept: application/zip" "$LOGS_URL" -o /tmp/logs.zip
-      echo "::set-output name=log_path::/tmp/logs.zip"
+      echo "log_path=/tmp/logs.zip" >> "$GITHUB_OUTPUT"
 
   - name: Run LLM debugger container
     shell: bash
